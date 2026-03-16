@@ -157,6 +157,10 @@
         </property>
       </activation>
       
+      <properties>
+        <teedy.docs.home>../data/docs</teedy.docs.home>
+      </properties>
+
       <build>
         <resources>
           <resource>
@@ -182,10 +186,12 @@
             <configuration>
               <systemProperties>
                 <application.mode>dev</application.mode>
-                <docs.home>../data/docs</docs.home>
+                <docs.home>${teedy.docs.home}</docs.home>
               </systemProperties>
               <webApp>
-                <contextPath>/docs-web</contextPath>
+                <contextPath>/</contextPath>
+                <resourceBase>${project.basedir}/src/main/webapp/src</resourceBase>
+                <descriptor>${project.basedir}/src/main/webapp/WEB-INF/web.xml</descriptor>
                 <overrideDescriptor>${project.basedir}/src/dev/main/webapp/web-override.xml</overrideDescriptor>
               </webApp>
             </configuration>
