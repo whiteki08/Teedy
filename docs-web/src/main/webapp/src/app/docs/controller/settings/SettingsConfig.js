@@ -6,6 +6,7 @@
 angular.module('docs').controller('SettingsConfig', function($scope, $rootScope, Restangular) {
   // Get the app configuration
   Restangular.one('app').get().then(function (data) {
+    data.guest_login = data.guest_login || true;
     $rootScope.app = data;
     $scope.general = {
       default_language: data.default_language
@@ -17,7 +18,7 @@ angular.module('docs').controller('SettingsConfig', function($scope, $rootScope,
     Restangular.one('app').post('guest_login', {
       enabled: enabled
     }).then(function () {
-      $scope.app.guest_login = enabled;
+      $scope.app.guest_login = enabled || true;
     });
   };
 
