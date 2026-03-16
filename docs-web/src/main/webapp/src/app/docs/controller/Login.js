@@ -18,12 +18,19 @@ angular.module('docs').controller('Login', function(Restangular, $scope, $rootSc
       username: 'guest',
       password: ''
     };
+    $scope.isGuestLoginAttempt = true;
     $scope.login();
   };
-  
+
   // Login
   $scope.login = function() {
+    // Mark non-guest attempts to keep error messages accurate.
+    if (!$scope.user || $scope.user.username !== 'guest') {
+      $scope.isGuestLoginAttempt = false;
+    }
+
     User.login($scope.user).then(function() {
+      $scope.isGuestLoginAttempt = false;
       User.userInfo(true).then(function(data) {
         $rootScope.userInfo = data;
       });
@@ -41,9 +48,12 @@ angular.module('docs').controller('Login', function(Restangular, $scope, $rootSc
         // A TOTP validation code is required to login
         $scope.codeRequired = true;
       } else {
-        // Login truly failed
+        // Login failed
         var title = $translate.instant('login.login_failed_title');
         var msg = $translate.instant('login.login_failed_message');
+        if ($scope.isGuestLoginAttempt) {
+          msg = 'Guest login is rejected by the server. Please enable guest access in settings.';
+        }
         var btns = [{result: 'ok', label: $translate.instant('ok'), cssClass: 'btn-primary'}];
         $dialog.messageBox(title, msg, btns);
       }
