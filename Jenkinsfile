@@ -63,12 +63,12 @@ pipeline {
       archiveArtifacts artifacts: '**/target/**/*.jar', fingerprint: true, allowEmptyArchive: true
       archiveArtifacts artifacts: '**/target/**/*.war', fingerprint: true, allowEmptyArchive: true
       script {
-        def testReports = findFiles(glob: '**/target/surefire-reports/*.xml')
-        if (testReports.length > 0) {
-          // Record test results only when reports exist to avoid post-action failures.
+        def hasTestReports = sh(script: "find . -path '*/target/surefire-reports/*.xml' -size +0c | grep -q .", returnStatus: true) == 0
+        if (hasTestReports) {
+          // Record test results when reports exist.
           junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
         } else {
-          echo 'No JUnit test reports found; skipping junit post action.'
+          error('No JUnit test reports found in surefire-reports; expected at least one non-empty XML report.')
         }
       }
     }
