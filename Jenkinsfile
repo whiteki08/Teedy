@@ -62,9 +62,14 @@ pipeline {
       archiveArtifacts artifacts: '**/target/site/**/*.*', fingerprint: true, allowEmptyArchive: true
       archiveArtifacts artifacts: '**/target/**/*.jar', fingerprint: true, allowEmptyArchive: true
       archiveArtifacts artifacts: '**/target/**/*.war', fingerprint: true, allowEmptyArchive: true
-      catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-        // Record test results but don't let post-action failures mark the whole run UNSTABLE
-        junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+      script {
+        def testReports = findFiles(glob: '**/target/surefire-reports/*.xml')
+        if (testReports.length > 0) {
+          // Record test results only when reports exist to avoid post-action failures.
+          junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+        } else {
+          echo 'No JUnit test reports found; skipping junit post action.'
+        }
       }
     }
   }
