@@ -1,5 +1,10 @@
 pipeline {
-  agent any
+  agent {
+    docker {
+      image 'maven:3.9.11-eclipse-temurin-11'
+      reuseNode true
+    }
+  }
   stages {
     stage('Clean') {
       steps {
@@ -44,10 +49,10 @@ pipeline {
   }
   post {
     always {
-      archiveArtifacts artifacts: '**/target/site/**/*.*', fingerprint: true
-      archiveArtifacts artifacts: '**/target/**/*.jar', fingerprint: true
-      archiveArtifacts artifacts: '**/target/**/*.war', fingerprint: true
-      junit '**/target/surefire-reports/*.xml'
+      archiveArtifacts artifacts: '**/target/site/**/*.*', fingerprint: true, allowEmptyArchive: true
+      archiveArtifacts artifacts: '**/target/**/*.jar', fingerprint: true, allowEmptyArchive: true
+      archiveArtifacts artifacts: '**/target/**/*.war', fingerprint: true, allowEmptyArchive: true
+      junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
     }
   }
 }
