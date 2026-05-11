@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
@@ -16,7 +16,6 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Dependencies version (external) -->
         <org.apache.commons.commons-compress.version>1.22</org.apache.commons.commons-compress.version>
         <org.apache.commons.commons-lang3.version>3.12.0</org.apache.commons.commons-lang3.version>
         <commons-io.commons-io.version>2.11.0</commons-io.commons-io.version>
@@ -56,7 +55,6 @@
         <org.eclipse.jetty.jetty-webapp.version>11.0.20</org.eclipse.jetty.jetty-webapp.version>
         <org.eclipse.jetty.jetty-servlet.version>11.0.20</org.eclipse.jetty.jetty-servlet.version>
 
-        <!-- Plugins version -->
         <org.apache.maven.plugins.maven-antrun-plugin.version>3.1.0
         </org.apache.maven.plugins.maven-antrun-plugin.version>
         <org.apache.maven.plugins.maven-jar-plugin.version>3.3.0</org.apache.maven.plugins.maven-jar-plugin.version>
@@ -64,10 +62,18 @@
         <org.apache.maven.plugins.maven-surefire-plugin.version>3.0.0
         </org.apache.maven.plugins.maven-surefire-plugin.version>
         <org.eclipse.jetty.jetty-maven-plugin.version>11.0.20</org.eclipse.jetty.jetty-maven-plugin.version>
-        <!-- Site/report plugins -->
         <org.apache.maven.plugins.maven-site-plugin.version>3.12.1</org.apache.maven.plugins.maven-site-plugin.version>
         <org.apache.maven.plugins.maven-project-info-reports-plugin.version>3.5.0
         </org.apache.maven.plugins.maven-project-info-reports-plugin.version>
+        <!-- added: define surefire report plugin version used in <reporting> -->
+        <org.apache.maven.plugins.maven-surefire-report-plugin.version>3.5.5</org.apache.maven.plugins.maven-surefire-report-plugin.version>
+        <!-- added: jacoco plugin version property so it's easy to upgrade when needed -->
+        <!-- NOTE: if your JDK is very recent and JaCoCo fails with Unsupported class file major version,
+             increase this version to a JaCoCo release that supports your JDK and/or run Maven with an older JDK.
+        -->
+        <org.jacoco.jacoco-maven-plugin.version>0.8.12</org.jacoco.jacoco-maven-plugin.version>
+        <!-- default: do not skip JaCoCo unless a profile or a CLI property sets this to true -->
+        <jacoco.skip>false</jacoco.skip>
     </properties>
 
     <scm>
@@ -94,6 +100,54 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>${org.apache.maven.plugins.maven-antrun-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>create-jacoco-redirect-pages</id>
+                        <phase>test</phase>
+                        <inherited>false</inherited>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/site/jacoco"/>
+                                <mkdir dir="${project.build.directory}/site/jacoco-aggregate"/>
+                                <echo file="${project.build.directory}/site/jacoco/index.html"><![CDATA[<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>JaCoCo</title>
+  <script>
+    (function () {
+      var target = window.location.pathname.indexOf('/target/staging/') !== -1
+        ? '../../docs-core/target/site/jacoco/index.html'
+        : '../../../docs-core/target/site/jacoco/index.html';
+      window.location.replace(target);
+    }());
+  </script>
+</head>
+<body>Redirecting to the docs-core JaCoCo report...</body>
+</html>]]></echo>
+                                <echo file="${project.build.directory}/site/jacoco-aggregate/index.html"><![CDATA[<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>JaCoCo Aggregate</title>
+  <script>
+    (function () {
+      var target = window.location.pathname.indexOf('/target/staging/') !== -1
+        ? '../../docs-core/target/site/jacoco/index.html'
+        : '../../../docs-core/target/site/jacoco/index.html';
+      window.location.replace(target);
+    }());
+  </script>
+</head>
+<body>Redirecting to the docs-core JaCoCo report...</body>
+</html>]]></echo>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
@@ -127,7 +181,43 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>${org.apache.maven.plugins.maven-site-plugin.version}</version>
+                <version>3.12.1</version>
+                <configuration>
+                    <stagingDirectory>${user.dir}/target/staging</stagingDirectory>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.21.2</version>
+                <configuration>
+                    <failOnViolation>false</failOnViolation>
+                    <printFailingErrors>true</printFailingErrors>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${org.jacoco.jacoco-maven-plugin.version}</version>
+                <configuration>
+                    <!-- allow skipping JaCoCo via property; a profile below will set this to true on very new JDKs -->
+                    <skip>${jacoco.skip}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -472,37 +562,46 @@
                 <version>${org.apache.directory.server.apacheds-all.version}</version>
             </dependency>
 
-            <!-- ImageIO plugins -->
-            <!-- JPEG -->
             <dependency>
                 <groupId>com.twelvemonkeys.imageio</groupId>
                 <artifactId>imageio-jpeg</artifactId>
                 <version>${com.twelvemonkeys.imageio.version}</version>
             </dependency>
 
-            <!-- TIFF -->
             <dependency>
                 <groupId>com.twelvemonkeys.imageio</groupId>
                 <artifactId>imageio-tiff</artifactId>
                 <version>${com.twelvemonkeys.imageio.version}</version>
             </dependency>
 
-            <!-- JPEG 2000 -->
             <dependency>
                 <groupId>com.github.jai-imageio</groupId>
                 <artifactId>jai-imageio-jpeg2000</artifactId>
                 <version>${com.github.jai-imageio.jai-imageio-jpeg2000.version}</version>
             </dependency>
 
-            <!-- JBIG2 -->
             <dependency>
                 <groupId>com.levigo.jbig2</groupId>
                 <artifactId>levigo-jbig2-imageio</artifactId>
                 <version>${com.levigo.jbig2.levigo-jbig2-imageio.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>5.7.1</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
+
+    <distributionManagement>
+        <site>
+            <id>site</id>
+            <url>http://localhost/site</url>
+        </site>
+    </distributionManagement>
+
     <reporting>
         <plugins>
             <plugin>
@@ -524,13 +623,86 @@
                     </reportSet>
                 </reportSets>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.21.2</version>
+                <configuration>
+                    <failOnViolation>false</failOnViolation>
+                    <linkXRef>false</linkXRef>
+                    <rulesets>
+                        customize-rules.xml
+                    </rulesets>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <id>module-reports</id>
+                        <reports>
+                            <report>pmd</report>
+                            <report>cpd</report>
+                        </reports>
+                    </reportSet>
+                    <reportSet>
+                        <id>aggregate-reports</id>
+                        <inherited>false</inherited>
+                        <reports>
+                            <report>aggregate-pmd</report>
+                            <report>aggregate-cpd</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>${org.apache.maven.plugins.maven-surefire-report-plugin.version}</version>
+                <reportSets>
+                    <reportSet>
+                        <id>module-report</id>
+                        <reports>
+                            <report>report</report>
+                        </reports>
+                    </reportSet>
+                    <reportSet>
+                        <id>aggregate-report</id>
+                        <inherited>false</inherited>
+                        <reports>
+                            <report>report</report>
+                        </reports>
+                        <configuration>
+                            <aggregate>true</aggregate>
+                        </configuration>
+                    </reportSet>
+                </reportSets>
+                <configuration>
+                    <showSuccess>true</showSuccess>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.13</version>
+                <reportSets>
+                    <reportSet>
+                        <id>module-report</id>
+                        <reports>
+                            <report>report</report>
+                        </reports>
+                    </reportSet>
+                    <reportSet>
+                        <id>aggregate-report</id>
+                        <inherited>false</inherited>
+                        <reports>
+                            <report>report-aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+
+
         </plugins>
     </reporting>
-    <distributionManagement>
-        <site>
-            <id>local-site</id>
-            <name>Local Staged Site</name>
-            <url>file://${project.basedir}/target/staging</url>
-        </site>
-    </distributionManagement>
+
 </project>
+

@@ -69,4 +69,22 @@ public class TestMimeTypeUtil extends BaseTest {
         path = Paths.get(getResource(FILE_MP4).toURI());
         Assert.assertEquals(MimeType.VIDEO_MP4, MimeTypeUtil.guessMimeType(path, FILE_MP4));
     }
+
+    @Test
+    public void testGuessMimeTypeDefault() throws Exception {
+        Path path = java.nio.file.Files.createTempFile("unknown", ".unknown");
+        try {
+            Assert.assertEquals(MimeType.DEFAULT, MimeTypeUtil.guessMimeType(path, "unknown.unknown"));
+            Assert.assertEquals(MimeType.DEFAULT, MimeTypeUtil.guessMimeType(path, null));
+        } finally {
+            java.nio.file.Files.delete(path);
+        }
+    }
+
+    @Test
+    public void testGetFileExtension() {
+        Assert.assertEquals("zip", MimeTypeUtil.getFileExtension(MimeType.APPLICATION_ZIP));
+        Assert.assertEquals("pdf", MimeTypeUtil.getFileExtension(MimeType.APPLICATION_PDF));
+        Assert.assertEquals("bin", MimeTypeUtil.getFileExtension("some/unknown-type"));
+    }
 }
