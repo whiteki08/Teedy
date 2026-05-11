@@ -102,9 +102,14 @@
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>${org.apache.maven.plugins.maven-antrun-plugin.version}</version>
                 <executions>
+                    <!--
+                      Run after site generation so the real jacoco-aggregate report already exists
+                      in target/site/jacoco-aggregate/. We only need to create a /jacoco/index.html
+                      stub that forwards there (maven-site-plugin never generates /jacoco/ itself).
+                    -->
                     <execution>
-                        <id>create-jacoco-redirect-pages</id>
-                        <phase>test</phase>
+                        <id>create-jacoco-stub-after-site</id>
+                        <phase>post-site</phase>
                         <inherited>false</inherited>
                         <goals>
                             <goal>run</goal>
@@ -112,39 +117,20 @@
                         <configuration>
                             <target>
                                 <mkdir dir="${project.build.directory}/site/jacoco"/>
-                                <mkdir dir="${project.build.directory}/site/jacoco-aggregate"/>
                                 <echo file="${project.build.directory}/site/jacoco/index.html"><![CDATA[<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <title>JaCoCo</title>
-  <script>
-    (function () {
-      var target = window.location.pathname.indexOf('/target/staging/') !== -1
-        ? '../../docs-core/target/site/jacoco/index.html'
-        : '../../../docs-core/target/site/jacoco/index.html';
-      window.location.replace(target);
-    }());
-  </script>
+  <script>(function(){window.location.replace('../jacoco-aggregate/index.html');}());</script>
 </head>
-<body>Redirecting to the docs-core JaCoCo report...</body>
+<body>Redirecting to JaCoCo Aggregate report...</body>
 </html>]]></echo>
-                                <echo file="${project.build.directory}/site/jacoco-aggregate/index.html"><![CDATA[<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <title>JaCoCo Aggregate</title>
-  <script>
-    (function () {
-      var target = window.location.pathname.indexOf('/target/staging/') !== -1
-        ? '../../docs-core/target/site/jacoco/index.html'
-        : '../../../docs-core/target/site/jacoco/index.html';
-      window.location.replace(target);
-    }());
-  </script>
-</head>
-<body>Redirecting to the docs-core JaCoCo report...</body>
-</html>]]></echo>
+                                <!-- Copy docs-core jacoco report into parent jacoco-aggregate dir -->
+                                <mkdir dir="${project.build.directory}/site/jacoco-aggregate"/>
+                                <copy todir="${project.build.directory}/site/jacoco-aggregate" overwrite="true">
+                                    <fileset dir="${project.basedir}/docs-core/target/site/jacoco" erroronmissingdir="false"/>
+                                </copy>
                             </target>
                         </configuration>
                     </execution>
@@ -664,32 +650,31 @@
                     </reportSet>
                 </reportSets>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>${org.apache.maven.plugins.maven-surefire-report-plugin.version}</version>
-                <reportSets>
-                    <reportSet>
-                        <id>module-report</id>
-                        <reports>
-                            <report>report</report>
-                        </reports>
-                    </reportSet>
-                    <reportSet>
-                        <id>aggregate-report</id>
-                        <inherited>false</inherited>
-                        <reports>
-                            <report>report</report>
-                        </reports>
-                        <configuration>
-                            <aggregate>true</aggregate>
-                        </configuration>
-                    </reportSet>
-                </reportSets>
-                <configuration>
-                    <showSuccess>true</showSuccess>
-                </configuration>
-            </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-surefire-report-plugin</artifactId>
+                 <version>${org.apache.maven.plugins.maven-surefire-report-plugin.version}</version>
+                 <reportSets>
+                     <reportSet>
+                         <id>aggregate-report</id>
+                         <inherited>false</inherited>
+                         <reports>
+                             <report>report-only</report>
+                         </reports>
+                         <configuration>
+                             <aggregate>true</aggregate>
+                             <reportsDirectories>
+                                 <reportsDirectory>${project.basedir}/docs-core/target/surefire-reports</reportsDirectory>
+                                 <reportsDirectory>${project.basedir}/docs-web-common/target/surefire-reports</reportsDirectory>
+                                 <reportsDirectory>${project.basedir}/docs-web/target/surefire-reports</reportsDirectory>
+                             </reportsDirectories>
+                         </configuration>
+                     </reportSet>
+                 </reportSets>
+                 <configuration>
+                     <showSuccess>true</showSuccess>
+                 </configuration>
+             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -720,19 +705,12 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.13</version>
+                <version>${org.jacoco.jacoco-maven-plugin.version}</version>
                 <reportSets>
                     <reportSet>
                         <id>module-report</id>
                         <reports>
                             <report>report</report>
-                        </reports>
-                    </reportSet>
-                    <reportSet>
-                        <id>aggregate-report</id>
-                        <inherited>false</inherited>
-                        <reports>
-                            <report>report-aggregate</report>
                         </reports>
                     </reportSet>
                 </reportSets>

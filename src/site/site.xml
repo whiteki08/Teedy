@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Docs Parent"
+         xmlns="http://maven.apache.org/DECORATION/1.8.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0
+                             https://maven.apache.org/xsd/decoration-1.8.0.xsd">
+
+  <skin>
+    <groupId>org.apache.maven.skins</groupId>
+    <artifactId>maven-fluido-skin</artifactId>
+    <version>1.12.0</version>
+  </skin>
+
+  <bannerLeft>
+    <name>Docs Parent</name>
+  </bannerLeft>
+
+  <body>
+    <menu name="Modules" inherit="top">
+      <item name="Docs Core" href="docs-core/index.html"/>
+      <item name="Docs Web Commons" href="docs-web-common/index.html"/>
+      <item name="Docs Web" href="docs-web/index.html"/>
+    </menu>
+
+    <menu name="Project Documentation" inherit="top">
+      <item name="Project Information" href="project-info.html"/>
+      <item name="Project Reports" href="project-reports.html"/>
+      <item name="PMD" href="pmd.html"/>
+      <item name="CPD" href="cpd.html"/>
+      <item name="Surefire Report" href="surefire.html"/>
+      <item name="Javadoc" href="apidocs/index.html"/>
+      <item name="JaCoCo" href="jacoco/index.html"/>
+      <item name="JaCoCo Aggregate" href="jacoco-aggregate/index.html"/>
+    </menu>
+  </body>
+</project>
+
