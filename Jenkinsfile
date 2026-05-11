@@ -1,49 +1,58 @@
+def mvnCommand(String args) {
+  return """
+    set -eu
+    MAVEN_VERSION=3.9.11
+    MAVEN_HOME=\"\$PWD/.maven/apache-maven-\${MAVEN_VERSION}\"
+    if [ ! -x \"\$MAVEN_HOME/bin/mvn\" ]; then
+      mkdir -p \"\$PWD/.maven\"
+      curl -fsSL \"https://archive.apache.org/dist/maven/maven-3/\${MAVEN_VERSION}/binaries/apache-maven-\${MAVEN_VERSION}-bin.tar.gz\" | tar -xz -C \"\$PWD/.maven\"
+    fi
+    export PATH=\"\$MAVEN_HOME/bin:\$PATH\"
+    mvn ${args}
+  """.stripIndent()
+}
+
 pipeline {
-  agent {
-    docker {
-      image 'maven:3.9.11-eclipse-temurin-11'
-      reuseNode true
-    }
-  }
+  agent any
   stages {
     stage('Clean') {
       steps {
-        sh 'mvn clean'
+        sh mvnCommand('clean')
       }
     }
     stage('Compile') {
       steps {
-        sh 'mvn compile'
+        sh mvnCommand('compile')
       }
     }
     stage('Test') {
       steps {
-        sh 'mvn test -Dmaven.test.failure.ignore=true'
+        sh mvnCommand('test -Dmaven.test.failure.ignore=true')
       }
     }
     stage('PMD') {
       steps {
-        sh 'mvn pmd:pmd'
+        sh mvnCommand('pmd:pmd')
       }
     }
     stage('JaCoCo') {
       steps {
-        sh 'mvn jacoco:report'
+        sh mvnCommand('jacoco:report')
       }
     }
     stage('Javadoc') {
       steps {
-        sh 'mvn javadoc:javadoc'
+        sh mvnCommand('javadoc:javadoc')
       }
     }
     stage('Site') {
       steps {
-        sh 'mvn site'
+        sh mvnCommand('site')
       }
     }
     stage('Package') {
       steps {
-        sh 'mvn package -DskipTests'
+        sh mvnCommand('package -DskipTests')
       }
     }
   }
