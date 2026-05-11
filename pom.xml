@@ -67,6 +67,7 @@
         </org.apache.maven.plugins.maven-project-info-reports-plugin.version>
         <!-- added: define surefire report plugin version used in <reporting> -->
         <org.apache.maven.plugins.maven-surefire-report-plugin.version>3.5.5</org.apache.maven.plugins.maven-surefire-report-plugin.version>
+        <org.apache.maven.plugins.maven-javadoc-plugin.version>3.12.0</org.apache.maven.plugins.maven-javadoc-plugin.version>
         <!-- added: jacoco plugin version property so it's easy to upgrade when needed -->
         <!-- NOTE: if your JDK is very recent and JaCoCo fails with Unsupported class file major version,
              increase this version to a JaCoCo release that supports your JDK and/or run Maven with an older JDK.
@@ -169,6 +170,17 @@
                 <configuration>
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${org.apache.maven.plugins.maven-javadoc-plugin.version}</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <doclint>none</doclint>
                 </configuration>
             </plugin>
 
@@ -677,6 +689,32 @@
                 <configuration>
                     <showSuccess>true</showSuccess>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${org.apache.maven.plugins.maven-javadoc-plugin.version}</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <doclint>none</doclint>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <id>module-report</id>
+                        <reports>
+                            <report>javadoc</report>
+                        </reports>
+                    </reportSet>
+                    <reportSet>
+                        <id>aggregate-report</id>
+                        <inherited>false</inherited>
+                        <reports>
+                            <report>aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
             </plugin>
 
             <plugin>
