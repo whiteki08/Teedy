@@ -30,12 +30,25 @@ pipeline {
         sh mvnCommand('test -Dmaven.test.failure.ignore=true')
       }
     }
-    stage('Install & Reports') {
+    stage('PMD') {
       steps {
-        // Run a single reactor invocation that installs modules and runs reporting plugins
-        // in the same Maven lifecycle so reactor resolution is consistent and no remote
-        // snapshot lookups are required.
-        sh mvnCommand('-B -ntp -U install -DskipTests pmd:pmd jacoco:report javadoc:javadoc site')
+        sh mvnCommand('pmd:pmd')
+      }
+    }
+    stage('JaCoCo') {
+      steps {
+        sh mvnCommand('jacoco:report')
+      }
+    }
+    stage('Javadoc') {
+      steps {
+        sh mvnCommand('javadoc:javadoc')
+      }
+    }
+    stage('Site') {
+      steps {
+        // install first so multi-module snapshot artifacts are available for site generation
+        sh mvnCommand('install -DskipTests site')
       }
     }
     stage('Package') {
