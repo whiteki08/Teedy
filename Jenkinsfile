@@ -47,7 +47,8 @@ pipeline {
     }
     stage('Site') {
       steps {
-        sh mvnCommand('site')
+        // install first so multi-module snapshot artifacts are available for site generation
+        sh mvnCommand('install -DskipTests site')
       }
     }
     stage('Package') {
