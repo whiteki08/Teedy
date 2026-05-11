@@ -30,6 +30,13 @@ pipeline {
         sh mvnCommand('test -Dmaven.test.failure.ignore=true')
       }
     }
+    stage('Install') {
+      steps {
+        // Install all modules to the local repo first so subsequent plugin-only invocations
+        // (pmd, jacoco, javadoc, site) can resolve reactor snapshot artifacts locally.
+        sh mvnCommand('-B -ntp -U install -DskipTests')
+      }
+    }
     stage('PMD') {
       steps {
         sh mvnCommand('pmd:pmd')
