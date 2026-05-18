@@ -1,0 +1,9 @@
+.git
+.maven
+data
+docs-core/data
+docs-web/data
+target
+**/target
+docs-web/src/main/webapp/node_modules
+docs-web/src/main/webapp/dist

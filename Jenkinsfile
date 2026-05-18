@@ -52,7 +52,7 @@ pipeline {
       script {
         def hasTestReports = sh(script: "find . -path '*/target/surefire-reports/*.xml' -size +0c | grep -q .", returnStatus: true) == 0
         if (hasTestReports) {
-          junit allowEmptyResults: true, testResults: '**/target/surefire-reports/*.xml'
+          junit allowEmptyResults: true, skipPublishingChecks: true, testResults: '**/target/surefire-reports/*.xml'
         } else {
           echo 'WARNING: No JUnit test reports found in surefire-reports.'
         }
