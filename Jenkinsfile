@@ -1,62 +1,48 @@
-def mvnCommand(String args) {
-  return """
-    set -eu
-    MAVEN_VERSION=3.9.11
-    MAVEN_HOME=\"\$PWD/.maven/apache-maven-\${MAVEN_VERSION}\"
-    if [ ! -x \"\$MAVEN_HOME/bin/mvn\" ]; then
-      mkdir -p \"\$PWD/.maven\"
-      curl -fsSL \"https://archive.apache.org/dist/maven/maven-3/\${MAVEN_VERSION}/binaries/apache-maven-\${MAVEN_VERSION}-bin.tar.gz\" | tar -xz -C \"\$PWD/.maven\"
-    fi
-    export PATH=\"\$MAVEN_HOME/bin:\$PATH\"
-    mvn ${args}
-  """.stripIndent()
-}
-
 pipeline {
-  agent any
-  stages {
-    stage('Clean') {
-      steps {
-        sh mvnCommand('clean')
-      }
+    agent any
+    environment {
+        // Define environment variables
+        // Jenkins credentials configuration
+        DOCKER_HUB_CREDENTIALS = 'dockerhub_credentials' // Docker Hub credentials ID stored in Jenkins
+        // Docker Hub Repository's name
+        DOCKER_IMAGE = 'yifans0214/teedy' // Your Docker Hub user name and Repository's name
+        DOCKER_TAG = "${env.BUILD_NUMBER}" // Use build number as tag
     }
-    stage('Compile') {
-      steps {
-        sh mvnCommand('compile')
-      }
-    }
-    stage('Test') {
-      steps {
-        sh mvnCommand('test -Dmaven.test.failure.ignore=true')
-      }
-    }
-    stage('Package') {
-      steps {
-        sh mvnCommand('package -DskipTests')
-      }
-    }
-    stage('Site') {
-      steps {
-        // site: generates all reports (surefire, jacoco, javadoc, pmd)
-        // post-site: runs antrun to create jacoco/index.html stub
-        // site:stage: copies everything into target/staging
-        sh mvnCommand('site post-site site:stage -Dmaven.test.failure.ignore=true')
-      }
-    }
-  }
-  post {
-    always {
-      archiveArtifacts artifacts: 'target/staging/**/*.*', fingerprint: true, allowEmptyArchive: true
-      archiveArtifacts artifacts: '**/target/**/*.jar', fingerprint: true, allowEmptyArchive: true
-      archiveArtifacts artifacts: '**/target/**/*.war', fingerprint: true, allowEmptyArchive: true
-      script {
-        def hasTestReports = sh(script: "find . -path '*/target/surefire-reports/*.xml' -size +0c | grep -q .", returnStatus: true) == 0
-        if (hasTestReports) {
-          junit allowEmptyResults: true, skipPublishingChecks: true, testResults: '**/target/surefire-reports/*.xml'
-        } else {
-          echo 'WARNING: No JUnit test reports found in surefire-reports.'
+    stages {
+        stage('Build') {
+            steps {
+                checkout scmGit(
+                    branches: [[name: '*/master']],
+                    extensions: [],
+                    userRemoteConfigs: [[url: 'https://github.com/whiteki08/Teedy']] // Your GitHub Repository
+                )
+                sh 'mvn -B -DskipTests clean package'
+            }
         }
-      }
+        
+        // Building Docker images
+        stage('Building image') {
+            steps {
+                script {
+                    // Assume Dockerfile located at root
+                    docker.build("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}")
+                }
+            }
+        }
+        
+        // Uploading Docker images into Docker Hub
+        stage('Upload image') {
+            steps {
+                script {
+                    // Sign in Docker Hub
+                    docker.withRegistry('https://registry.hub.docker.com', DOCKER_HUB_CREDENTIALS) {
+                        // Push image
+                        docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push()
+                        // Optional: label latest
+                        docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push('latest')
+                    }
+                }
+            }
+        }
     }
-  }
 }
