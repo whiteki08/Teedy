@@ -29,8 +29,11 @@ pipeline {
         stage('Building image') {
             steps {
                 script {
-                    // Assume Dockerfile located at root
-                    docker.build("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}")
+                    // Explicitly tell the plugin to use the installed docker tool
+                    docker.withTool('docker') {
+                        // Assume Dockerfile located at root
+                        docker.build("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}")
+                    }
                 }
             }
         }
@@ -39,12 +42,35 @@ pipeline {
         stage('Upload image') {
             steps {
                 script {
-                    // Sign in Docker Hub
-                    docker.withRegistry('https://registry.hub.docker.com', DOCKER_HUB_CREDENTIALS) {
-                        // Push image
-                        docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push()
-                        // Optional: label latest
-                        docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push('latest')
+                    // Explicitly tell the plugin to use the installed docker tool
+                    docker.withTool('docker') {
+                        // Sign in Docker Hub
+                        docker.withRegistry('https://registry.hub.docker.com', DOCKER_HUB_CREDENTIALS) {
+                            // Push image
+                            docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push()
+                            // Optional: label latest
+                            docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").push('latest')
+                        }
+                    }
+                }
+            }
+        }
+
+        // Running Docker container
+        stage('Run containers') {
+            steps {
+                script {
+                    // Explicitly tell the plugin to use the installed docker tool
+                    docker.withTool('docker') {
+                        // Stop then remove containers if exists
+                        sh 'docker stop teedy-container-8081 || true'
+                        sh 'docker rm teedy-container-8081 || true'
+                        
+                        // Run Container
+                        docker.image("${env.DOCKER_IMAGE}:${env.DOCKER_TAG}").run('--name teedy-container-8081 -d -p 8081:8080')
+                        
+                        // Optional: list all teedy-containers
+                        sh 'docker ps --filter "name=teedy-container"'
                     }
                 }
             }
