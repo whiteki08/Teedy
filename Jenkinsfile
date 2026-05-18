@@ -2,6 +2,7 @@ pipeline {
     agent any
     tools {
         maven 'M3'
+        dockerTool 'docker'
     }
     environment {
         // Define environment variables
