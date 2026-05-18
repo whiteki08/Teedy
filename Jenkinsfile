@@ -16,6 +16,7 @@ pipeline {
                     extensions: [],
                     userRemoteConfigs: [[url: 'https://github.com/whiteki08/Teedy']] // Your GitHub Repository
                 )
+                sh 'mvn --version' // Verify Maven is available
                 sh 'mvn -B -DskipTests clean package'
             }
         }
